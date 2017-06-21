@@ -67,13 +67,43 @@ We are looking into [`Read`](https://godoc.org/github.com/yunabe/easycsv#Reader.
 func (r *Reader) Read(e interface{}) bool
 ```
 
-[`Read`](https://godoc.org/github.com/yunabe/easycsv#Reader.Read) receives a pointer to a struct (e.g. `*mystruct`) or a pointer to a slice of a primitive type (e.g. `*[]int`).
+[`Read`](https://godoc.org/github.com/yunabe/easycsv#Reader.Read) receives a pointer to a struct (e.g. `*myStruct`) or a pointer to a slice of a primitive type (e.g. `*[]int`).
 If it reads a new row from CSV successufly, it stores the row into `e` and returns `true`.
 If `Reader` reached to `EOF` or it fails to read a new row for some reasons, it returns `false`.
-
-`Read` can return `false` for a lot of reasons. To know the reason, you have to call `Done()` subsequently.
+`Read` returns `false` for various reasons. To know the reason, you have to call `Done()` subsequently.
 `Done` returns an error if `Read` encountered an error.
 `Done` returns `nil` if `Read` returned `false` because it reached to `EOF`.
+
+You can pass two types of pointers to Read. A pointer to a struct (e.g. `*myStruct`) or  a pointer to a slice of primitive typs (e.g. `*[]int`). Passing a pointer to a struct is more convenient.
+When you use a struct, you need to specify how to map CSV columns to the struct's field using struct field's tags.
+Here are examples:
+
+```golang
+var entry struct {
+	Name string `index:"0"`
+	Age  int    `index:"1"`
+}
+
+var entry struct {
+	Name string `name:"name"`
+	Age  int    `name:"age"`
+}
+```
+
+You can use `index` tag or `name` tag to specify the mapping.
+When `index` is used, Read map `index`-th (0-based) column to the field.
+In the first example, the frist column is mapped to Name field and the second column is mapped to Age.
+When `name` is used, Read uses the first line of CSV as a header with column names and maps columns to fields based on the column names in the header. In the second example, when the CSV is something like
+
+```csv
+age,name
+10,Alice
+20,Bob
+```
+
+the frist column is mapped to Age and the second column is mapped to Name. So `{Alice 10}` and `{Bob 20}` are stored to the struct respectively. You can not use both `index` tag and `name` tag in the same struct. Read reports an error in that case.
+
+When you read CSV with `Read` methods, you have to always call `Done()` subsequently to (1) check the error and (2) close the file behind the Reader when it is instantiated with `NewReadCloser` or `NewReaderFile`. If you forget to call `Done()`, the error will be completely gone.
 
 ## Loop
 TBD

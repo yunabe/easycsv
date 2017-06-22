@@ -91,9 +91,9 @@ var entry struct {
 ```
 
 You can use `index` tag or `name` tag to specify the mapping.
-When `index` is used, Read map `index`-th (0-based) column to the field.
-In the first example, the frist column is mapped to Name field and the second column is mapped to Age.
-When `name` is used, Read uses the first line of CSV as a header with column names and maps columns to fields based on the column names in the header. In the second example, when the CSV is something like
+When `index` is used, Read maps `index`-th (0-based) column to the field.
+In the first example, the frist column is mapped to Name and the second column is mapped to Age.
+When `name` is used, Read uses the first line of CSV as a header with column names and maps columns to fields based on the column names in the header. In the second example, give that the content of CSV is the following,
 
 ```csv
 age,name
@@ -103,13 +103,33 @@ age,name
 
 the frist column is mapped to Age and the second column is mapped to Name. So `{Alice 10}` and `{Bob 20}` are stored to the struct respectively. You can not use both `index` tag and `name` tag in the same struct. Read reports an error in that case.
 
+If you pass a pointer to a slice to Read, Read converts CSV row into the slice and fills it to the argument.
+
+The conversion from CSV row (string) to the given field type (int, float32, bool, etc...) is handled in Reader automatically.
+
 When you read CSV with `Read` methods, you have to always call `Done()` subsequently to (1) check the error and (2) close the file behind the Reader when it is instantiated with `NewReadCloser` or `NewReaderFile`. If you forget to call `Done()`, the error will be completely gone.
 
 ## Loop
-TBD
+```golang
+func (r *Reader) Loop(body interface{})
+```
 
 ## ReadAll
-TBD
+```golang
+func (r *Reader) ReadAll(s interface{})
+```
+
+ReadAll reads CSV to the end and convert all rows into the slice passed as an argument.
+The argument `s` should be a pointer of a slice of a struct (`*[]myStruct`) or a pointer of a slice of a slice (`*[][]int`).
+Aside from that, the same rule of ReadAll is applied to ReadAll. You need to specify how to map columns to struct fields using struct field's tag.
+
+```golang
+var entry []struct {
+	Name string `index:"0"`
+	Age  int    `index:"1"`
+}
+r.ReadAll(&entry)
+```
 
 # godoc
 [godoc](https://godoc.org/github.com/yunabe/easycsv)

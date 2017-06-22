@@ -4,7 +4,8 @@ import "errors"
 
 // Option specifies the spec of Reader.
 type Option struct {
-	Comma    rune
+	Comma rune
+	// Comment, if not 0, is the comment character. Lines beginning with the character without preceding whitespace are ignored.
 	Comment  rune
 	Decoders map[string]interface{}
 	// TODO: Use AutoIndex

@@ -65,3 +65,22 @@ func ExampleReader_tSV() {
 	}
 	// Output: {Alice 10}{Bob 20}
 }
+
+func ExampleLineNumber() {
+	r := NewReaderFile("testdata/sample.csv")
+	var entry struct {
+		Name string `index:"0"`
+		Age  int    `index:"1"`
+	}
+	bob := "Bob"
+	lino := 0
+	for r.Read(&entry) {
+		if entry.Name == bob {
+			lino = r.LineNumber()
+		}
+	}
+	if lino > 0 {
+		fmt.Printf("Found %s at line %d", bob, lino)
+	}
+	// Output: Found Bob at line 2
+}

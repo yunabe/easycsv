@@ -326,6 +326,13 @@ func (r *Reader) DoneDefer(err *error) {
 	}
 }
 
+// LineNumber returns the current position of r in the input (1-based line number).
+// The behavior of LineNumber is undefined if it is called before Read operations or
+// after r reched to EOF or an error.
+func (r *Reader) LineNumber() int {
+	return r.lineno
+}
+
 type rowDecoder interface {
 	decode(s []string, out reflect.Value) error
 	needHeader() bool

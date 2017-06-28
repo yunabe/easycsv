@@ -477,3 +477,29 @@ func TestNewDecoder_InvalidIndex(t *testing.T) {
 		t.Errorf("Unexpected error: %q", err)
 	}
 }
+
+func TestLineNumber(t *testing.T) {
+	f := bytes.NewReader([]byte("10,1.2\n20,2.3\n30,3.4"))
+	r := NewReader(f)
+	var ints []int
+	var lineno []int
+	r.Loop(func(e struct {
+		Int   int     `index:"0"`
+	}) error {
+		ints = append(ints, e.Int)
+		lineno = append(lineno, r.LineNumber())
+		return nil
+	})
+	if err := r.Done(); err != nil {
+		t.Error(err)
+		return
+	}
+	expectedInt := []int{10, 20, 30}
+	expectedLineno := []int{1, 2, 3}
+	if !reflect.DeepEqual(expectedInt, ints) {
+		t.Errorf("Expected %#v but got %#v", expectedInt, ints)
+	}
+	if !reflect.DeepEqual(expectedLineno, lineno) {
+		t.Errorf("Expected %#v but got %#v", expectedLineno, lineno)
+	}
+}

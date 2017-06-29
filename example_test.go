@@ -1,8 +1,10 @@
 package easycsv
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"time"
 )
 
 func ExampleReader_read() {
@@ -103,4 +105,26 @@ func ExampleReader_DoneDefer() {
 		fmt.Printf("Failed: %v", err)
 	}
 	// Output: Failed: Accessed index 3 though the size of the row is 2
+}
+
+func ExampleOption_decoders() {
+	r := NewReader(bytes.NewBufferString("name,birthday\nAlice,1980-12-30\nBob,1975-06-09"),
+		Option{
+			Decoders: map[string]interface{}{
+				"date": func(s string) (time.Time, error) {
+					return time.Parse("2006-01-02", s)
+				},
+			},
+		})
+	var entry struct {
+		Name  string    `name:"name"`
+		Birth time.Time `name:"birthday" enc:"date"`
+	}
+	for r.Read(&entry) {
+		fmt.Print(entry)
+	}
+	if err := r.Done(); err != nil {
+		fmt.Printf("Failed: %v\n", err)
+	}
+	// Output: {Alice 1980-12-30 00:00:00 +0000 UTC}{Bob 1975-06-09 00:00:00 +0000 UTC}
 }

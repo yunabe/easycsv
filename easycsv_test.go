@@ -468,7 +468,7 @@ func TestEncTag(t *testing.T) {
 }
 
 func TestNewDecoder(t *testing.T) {
-	d, err := newDecoder(reflect.TypeOf(struct {
+	d, err := newDecoder(Option{}, reflect.TypeOf(struct {
 		Name int `name:"name"`
 		Age  int `name:"age"`
 	}{}))
@@ -481,7 +481,7 @@ func TestNewDecoder(t *testing.T) {
 }
 
 func TestNewDecoder_IndexAndName(t *testing.T) {
-	_, err := newDecoder(reflect.TypeOf(struct {
+	_, err := newDecoder(Option{}, reflect.TypeOf(struct {
 		Name int `name:"name"`
 		Age  int `index:"0"`
 	}{}))
@@ -491,7 +491,7 @@ func TestNewDecoder_IndexAndName(t *testing.T) {
 }
 
 func TestNewDecoder_NoStructTag(t *testing.T) {
-	_, err := newDecoder(reflect.TypeOf(struct {
+	_, err := newDecoder(Option{}, reflect.TypeOf(struct {
 		Name int
 		Age  int
 	}{}))
@@ -501,7 +501,7 @@ func TestNewDecoder_NoStructTag(t *testing.T) {
 }
 
 func TestNewDecoder_InvalidIndex(t *testing.T) {
-	_, err := newDecoder(reflect.TypeOf(struct {
+	_, err := newDecoder(Option{}, reflect.TypeOf(struct {
 		Name int `index:"-1"`
 		Age  int `index:"hello"`
 	}{}))
@@ -516,7 +516,7 @@ func TestLineNumber(t *testing.T) {
 	var ints []int
 	var lineno []int
 	r.Loop(func(e struct {
-		Int   int     `index:"0"`
+		Int int `index:"0"`
 	}) error {
 		ints = append(ints, e.Int)
 		lineno = append(lineno, r.LineNumber())

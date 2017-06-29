@@ -144,7 +144,7 @@ func (r *Reader) Loop(body interface{}) {
 			return
 		}
 	}
-	dec, err := newDecoder(inStruct)
+	dec, err := newDecoder(r.opt, inStruct)
 	if err != nil {
 		r.err = err
 		return
@@ -220,7 +220,7 @@ func (r *Reader) Read(e interface{}) bool {
 		r.err = fmt.Errorf("The argument of Read must be a pointer to a struct or a pointer to a slice, but got a pointer to %v", t.Elem().Kind())
 		return false
 	}
-	decoder, err := newDecoder(t.Elem())
+	decoder, err := newDecoder(r.opt, t.Elem())
 	if err != nil {
 		r.err = err
 		return false
@@ -265,7 +265,7 @@ func (r *Reader) ReadAll(s interface{}) {
 		r.err = fmt.Errorf("The argument of ReadAll must be a pointer to a slice of a slice or a pointer to a slice of a struct, but got %v", t)
 		return
 	}
-	decoder, err := newDecoder(et)
+	decoder, err := newDecoder(r.opt, et)
 	if err != nil {
 		r.err = err
 		return
@@ -342,7 +342,40 @@ type rowDecoder interface {
 	consumeHeader([]string) error
 }
 
-func parseStructTag(field reflect.StructField,
+func validateCustomConverter(conv interface{}, enc string, field reflect.StructField, errs *[]string) bool {
+	convType := reflect.TypeOf(conv)
+	if convType.Kind() != reflect.Func {
+		*errs = append(*errs, fmt.Sprintf("The custom decoder for Encoding %q must be a function", enc))
+		return false
+	}
+	ok := true
+	if numin := convType.NumIn(); numin != 1 {
+		*errs = append(*errs, fmt.Sprintf("The custom decoder for Encoding %q must receive an arg, but receives %d args", enc, numin))
+		ok = false
+	} else if convType.In(0).Kind() != reflect.String {
+		*errs = append(*errs, fmt.Sprintf("The custom decoder for Encoding %q must receive a string, but receives %v", enc, convType.In(0)))
+		ok = false
+	}
+	// TODO: Supports custom decoders that does not return an error.
+	if numout := convType.NumOut(); numout != 2 {
+		*errs = append(*errs, fmt.Sprintf("The custom decoder for Encoding %q must return two values, but returns %d values", enc, numout))
+		ok = false
+	} else {
+		if convType.Out(0) != field.Type {
+			*errs = append(*errs, fmt.Sprintf("The type of field %q is %v, but enc %q returns %q", field.Name, field.Type, enc, convType.Out(0)))
+			ok = false
+		}
+		if convType.Out(1) != errorType {
+			*errs = append(*errs, fmt.Sprintf("The second return value of the custom decoder for %q must be error", enc))
+			ok = false
+		}
+	}
+	return ok
+}
+
+func parseStructTag(
+	opt Option,
+	field reflect.StructField,
 	fieldIdx int,
 	nameMap map[string]int,
 	idxMap map[int]int,
@@ -362,16 +395,23 @@ func parseStructTag(field reflect.StructField,
 	var conv interface{}
 	enc := tag.Get("enc")
 	if enc != "" {
-		pre := predefinedDecoders[enc]
-		// TODO: Test these errors.
-		if pre != nil {
-			conv = pre(field.Type)
-			if conv == nil {
-				*errors = append(*errors, fmt.Sprintf("Encoding %q does not support %v", enc, field.Type))
+		if opt.Decoders != nil && opt.Decoders[enc] != nil {
+			conv = opt.Decoders[enc]
+			if !validateCustomConverter(conv, enc, field, errors) {
+				conv = nil
 			}
 		} else {
-			*errors = append(*errors, fmt.Sprintf("Encoding %q is not defined", enc))
-			return
+			pre := predefinedDecoders[enc]
+			// TODO: Test these errors.
+			if pre != nil {
+				conv = pre(field.Type)
+				if conv == nil {
+					*errors = append(*errors, fmt.Sprintf("Encoding %q does not support %v", enc, field.Type))
+				}
+			} else {
+				*errors = append(*errors, fmt.Sprintf("Encoding %q is not defined", enc))
+				return
+			}
 		}
 	}
 	if conv == nil {
@@ -394,9 +434,9 @@ func parseStructTag(field reflect.StructField,
 	idxMap[i] = fieldIdx
 }
 
-func newDecoder(t reflect.Type) (rowDecoder, error) {
+func newDecoder(opt Option, t reflect.Type) (rowDecoder, error) {
 	if t.Kind() == reflect.Struct {
-		return newStructDecoder(t)
+		return newStructDecoder(opt, t)
 	} else if t.Kind() == reflect.Slice {
 		return newSliceDecoder(t)
 	}
@@ -438,7 +478,7 @@ func (d *sliceRowDecoder) decode(s []string, out reflect.Value) error {
 	return nil
 }
 
-func newStructDecoder(t reflect.Type) (rowDecoder, error) {
+func newStructDecoder(opt Option, t reflect.Type) (rowDecoder, error) {
 	if t.NumField() == 0 {
 		return nil, errors.New("The struct has no field")
 	}
@@ -459,7 +499,7 @@ func newStructDecoder(t reflect.Type) (rowDecoder, error) {
 	var converters []reflect.Value
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		parseStructTag(f, i, nameMap, idxMap, &converters, &tagErrors)
+		parseStructTag(opt, f, i, nameMap, idxMap, &converters, &tagErrors)
 	}
 	if len(nameMap) != 0 && len(idxMap) != 0 {
 		tagErrors = append(tagErrors, "Fields with name and fields with index are mixed")

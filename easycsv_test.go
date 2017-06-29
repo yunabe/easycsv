@@ -215,11 +215,27 @@ func TestLoopIndexOutOfRange(t *testing.T) {
 		Int   int     `index:"0"`
 		Float float32 `index:"2"`
 	}) error {
-		t.Error("panic")
+		t.Error("The callback of Look is invoked unexpectedly")
 		return nil
 	})
 	err := r.Done()
 	if err == nil || err.Error() != "Accessed index 2 though the size of the row is 2" {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestLoopMissingColumn(t *testing.T) {
+	f := bytes.NewReader([]byte("a,b\n10,1.2"))
+	r := NewReader(f)
+	r.Loop(func(e struct {
+		Int   int     `name:"a"`
+		Float float32 `name:"c"`
+	}) error {
+		t.Error("The callback of Look is invoked unexpectedly")
+		return nil
+	})
+	err := r.Done()
+	if err == nil || err.Error() != "c did not appear in the first line" {
 		t.Errorf("Unexpected error: %v", err)
 	}
 }
@@ -345,6 +361,22 @@ func TestReadIndexOutOfRange(t *testing.T) {
 	}
 	err := r.Done()
 	if err == nil || err.Error() != "Accessed index 2 though the size of the row is 2" {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestReadMissingColumn(t *testing.T) {
+	f := bytes.NewReader([]byte("a,c\n10,1.2"))
+	r := NewReader(f)
+	var e struct {
+		Int   int     `name:"a"`
+		Float float32 `name:"b"`
+	}
+	for r.Read(&e) {
+		t.Errorf("r.Read returned true unexpectedly with %#v", e)
+	}
+	err := r.Done()
+	if err == nil || err.Error() != "b did not appear in the first line" {
 		t.Errorf("Unexpected error: %v", err)
 	}
 }

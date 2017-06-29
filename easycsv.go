@@ -233,7 +233,10 @@ func (r *Reader) Read(e interface{}) bool {
 				return false
 			}
 		}
-		decoder.consumeHeader(r.firstLine)
+		if err := decoder.consumeHeader(r.firstLine); err != nil {
+			r.err = err
+			return false
+		}
 	}
 	r.readLine()
 	if r.err != nil {

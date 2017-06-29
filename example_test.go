@@ -84,3 +84,23 @@ func ExampleReader_LineNumber_reader() {
 	}
 	// Output: Found Bob at line 2
 }
+
+func ExampleReader_DoneDefer() {
+	f := func() (err error) {
+		r := NewReaderFile("testdata/sample.csv")
+		defer r.DoneDefer(&err)
+		var entry struct {
+			Name string `index:"3"`
+		}
+		// This fails with a index-out-of-range error.
+		for r.Read(&entry) {
+			err = fmt.Errorf("This block must not be executed")
+		}
+		return
+	}
+	err := f()
+	if err != nil {
+		fmt.Printf("Failed: %v", err)
+	}
+	// Output: Failed: Accessed index 3 though the size of the row is 2
+}

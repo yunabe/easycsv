@@ -66,7 +66,7 @@ func ExampleReader_tSV() {
 	// Output: {Alice 10}{Bob 20}
 }
 
-func ExampleLineNumber() {
+func ExampleReader_LineNumber_reader() {
 	r := NewReaderFile("testdata/sample.csv")
 	var entry struct {
 		Name string `index:"0"`

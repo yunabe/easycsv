@@ -316,7 +316,7 @@ func (r *Reader) Done() error {
 	return r.nonEOFError()
 }
 
-// DoneDefer do the same thing as Done does. But it outputs an error to the argument.
+// DoneDefer does the same thing as Done does. But it outputs an error to the argument.
 // DoneDefer does not overwrite an error if an error is already stored in err.
 // DoneDefer is useful to call Done from defer statement.
 func (r *Reader) DoneDefer(err *error) {

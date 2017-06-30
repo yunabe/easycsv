@@ -117,14 +117,15 @@ func (r *Reader) Loop(body interface{}) (err error) {
 		r.err = fmt.Errorf("The argument of Loop must be func but got %v", v.Kind())
 		return
 	}
-	if v.NumIn() != 1 || v.NumOut() != 1 {
-		r.err = fmt.Errorf("The function passed to Loop must return receive one argument and return one argument")
+	if v.NumIn() != 1 || v.NumOut() > 1 {
+		r.err = fmt.Errorf("The function passed to Loop must receive one argument and return one or zero value")
 		return
 	}
-	out := v.Out(0)
-	if out.Kind() != reflect.Bool && out != errorType {
-		r.err = fmt.Errorf("The function passed to Loop must return error or bool")
-		return
+	if v.NumOut() > 0 {
+		if out := v.Out(0); out.Kind() != reflect.Bool && out != errorType {
+			r.err = fmt.Errorf("The function passed to Loop must return error or bool")
+			return
+		}
 	}
 	in := v.In(0)
 	var inStruct reflect.Type
@@ -179,25 +180,29 @@ func (r *Reader) Loop(body interface{}) (err error) {
 			arg = p.Elem()
 		}
 		rets := reflect.ValueOf(body).Call([]reflect.Value{arg})
-		if len(rets) == 0 || rets[0].IsNil() {
+		if len(rets) == 0 {
 			continue
 		}
-		if rets[0].Kind() == reflect.Bool {
-			cont := rets[0].Bool()
-			if cont {
+		ret := rets[0]
+		if ret.Kind() == reflect.Bool {
+			if ret.Bool() {
 				continue
 			} else {
 				break
 			}
 		}
-		err = rets[0].Interface().(error)
-		if err != nil {
-			if err != Break {
-				r.err = err
-			}
-			break
+		if ret.IsNil() {
+			// body returned nil error.
+			continue
 		}
-		r.err = err
+		err = rets[0].Interface().(error)
+		if err == nil {
+			panic("err must not be nil if I understand reflect spec correctly")
+		}
+		if err != Break {
+			r.err = err
+		}
+		break
 	}
 	return
 }

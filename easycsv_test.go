@@ -292,6 +292,39 @@ func TestLoopBreakWithError(t *testing.T) {
 	}
 }
 
+func TestLoopNoReturn(t *testing.T) {
+	r := NewReader(bytes.NewReader([]byte("10,20\n30,40")))
+	var rows [][]int
+	err := r.Loop(func(row []int) {
+		rows = append(rows, row)
+	})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+		return
+	}
+	expected := [][]int{{10, 20}, {30, 40}}
+	if !reflect.DeepEqual(rows, expected) {
+		t.Errorf("Expected %#v but got %#v", expected, rows)
+	}
+}
+
+func TestLoopReturnBool(t *testing.T) {
+	r := NewReader(bytes.NewReader([]byte("10,20\n30,40")))
+	var rows [][]int
+	err := r.Loop(func(row []int) bool {
+		rows = append(rows, row)
+		return false
+	})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+		return
+	}
+	expected := [][]int{{10, 20}}
+	if !reflect.DeepEqual(rows, expected) {
+		t.Errorf("Expected %#v but got %#v", expected, rows)
+	}
+}
+
 func TestRead(t *testing.T) {
 	f := bytes.NewReader([]byte("10,1.2\n20,2.3\n30,3.4"))
 	r := NewReader(f)

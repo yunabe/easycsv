@@ -1,5 +1,5 @@
 # easycsv
-easycsv package provides API to read CSV file in Go (golang).
+easycsv package provides API to read CSV files in Go (golang) easily.
 
 # Installation
 ```
@@ -11,7 +11,11 @@ go get -u github.com/yunabe/easycsv
 - `easycsv` automatically converts CSV rows into your custom structs.
 - Of course, you can handle TSV and other CSV-like formats by customizing `easycsv.Reader`.
 
-# Quick Look
+# Links
+- [yunabe/easycsv godoc](https://godoc.org/github.com/yunabe/easycsv)
+- [yunabe/easycsv GitHub](https://github.com/yunabe/easycsv)
+
+# Quick Tour
 
 ## Read a CSV file to a struct
 ```golang
@@ -28,7 +32,7 @@ if err := r.Done(); err != nil {
 }
 ```
 
-## Read a CSV with Loop
+## Read a CSV file with Loop
 ```golang
 r := easycsv.NewReaderFile("testdata/sample.csv")
 err := r.Loop(func(entry *struct {
@@ -57,7 +61,7 @@ You can create a new `Reader` instance from `io.Reader`, `io.ReadCloser` and a f
   - Create `easycsv.Reader` from a file path.
 
 The Reader created by NewReadCloser and NewReaderFile closes the file automatically when the Reader is finished.
-So you do not need to close files manually and you are able to omit an error handling code for closing files.
+So you do not need to close files manually and you can omit error handling code for closing files.
 
 ## Read
 There are three methods to read CSV with `easycsv.Reader`. Read, Loop and ReadAll.
@@ -69,12 +73,12 @@ func (r *Reader) Read(e interface{}) bool
 
 [`Read`](https://godoc.org/github.com/yunabe/easycsv#Reader.Read) receives a pointer to a struct (e.g. `*myStruct`) or a pointer to a slice of a primitive type (e.g. `*[]int`).
 If it reads a new row from CSV successufly, it stores the row into `e` and returns `true`.
-If `Reader` reached to `EOF` or it fails to read a new row for some reasons, it returns `false`.
-`Read` returns `false` for various reasons. To know the reason, you have to call `Done()` subsequently.
+If `Reader` reaches to `EOF` or it fails to read a new row for some reasons, it returns `false`.
+`Read` returns `false` for various reasons. To check the reason, you have to call `Done()` subsequently.
 `Done` returns an error if `Read` encountered an error.
 `Done` returns `nil` if `Read` returned `false` because it reached to `EOF`.
 
-You can pass two types of pointers to Read. A pointer to a struct (e.g. `*myStruct`) or  a pointer to a slice of primitive typs (e.g. `*[]int`). Passing a pointer to a struct is more convenient.
+You can pass two types of pointers to Read. A pointer of a struct (e.g. `*myStruct`) or  a pointer of a slice of primitive typs (e.g. `*[]int`). Passing a pointer of a struct is more convenient.
 When you use a struct, you need to specify how to map CSV columns to the struct's field using struct field's tags.
 Here are examples:
 
@@ -106,27 +110,32 @@ the frist column is mapped to Age and the second column is mapped to Name. So `{
 If you pass a pointer to a slice to Read, Read converts CSV row into the slice and fills it to the argument.
 If the argument `e` is invalid, Read returns false immediately and the reason of the error is reported by `Done()`.
 
-The conversion from CSV row (string) to the given field type (int, float32, bool, etc...) is handled in Reader automatically.
+The conversion from CSV row (string) to the given field type (int, float32, bool, etc...) is handled in Reader automatically. If you want to customize the conversion, see [Custom encoding](#custom-encoding) section below.
 
-When you read CSV with `Read` methods, you have to always call `Done()` subsequently to (1) check the error and (2) close the file behind the Reader when it is instantiated with `NewReadCloser` or `NewReaderFile`. If you forget to call `Done()`, the error will be completely gone.
+When you read CSV with `Read` methods, you have to always call `Done()` subsequently to (1) check the error and (2) close the file behind the Reader. If you forget to call `Done()`, the error will be completely gone.
+Do not forget to call `Done` after `Read`.
 
 ## Loop
 ```golang
-func (r *Reader) Loop(body interface{})
+func (r *Reader) Loop(body interface{}) (err error)
 ```
 
-Loop reads CSV a line by line and executes `body` with a line everytime it reads a line.
+Loop reads CSV line by line and executes `body` with a line everytime it reads a line.
 `body` must be a function that receives a struct (e.g. `myStruct`), a pointer of a struct (e.g. `*myStruct`) or a slice of primitives (e.g. `[]int`).
-The line of CSV is automatically converted to the argument of `body` when Loop reads the line before it calls `body`.
-
+A line of CSV is automatically converted to the argument of `body` when Loop reads the line and passed to `body`.
 Also, `body` must be a function that returns `bool`, `error` or no return value.
 If `body` is a function that returns `bool`, Loop stops reading CSV at the line where `body` returns false.
 If `body` is a function that returns `error`, Loop stops reading CSV when `body` retruns an error.
 Loop does not stop until it reached to the end if `body` has no return value.
-If `body` retuns an error, Loop quits and the error.
+If `body` retuns an error, Loop quits and reports the error.
+
+When `Loop` ends, it invokes `Done` and closes internal files automatically.
+So, you do not need to call Done after Loop.
+Loop returns the first error if it encounters errors. It returns `nil` if everything goes well.
+Do not forget to handle the error returned by Loop.
 
 The example below shows how to use Loop with a function which returns `error`.
-This code reads CSV until Loop ends to EOF or an entry with Age < 0 is found in the CSV.
+This code reads CSV until Loop reaches to EOF or an entry with Age < 0 is found in the CSV.
 
 ```golang
 err := r.Loop(func(entry *struct {
@@ -145,12 +154,15 @@ if err != nil {
 
 ## ReadAll
 ```golang
-func (r *Reader) ReadAll(s interface{})
+func (r *Reader) ReadAll(s interface{}) (err error)
 ```
 
-ReadAll reads CSV to the end and convert all rows into the slice passed as an argument.
-The argument `s` should be a pointer of a slice of a struct (`*[]myStruct`) or a pointer of a slice of a slice (`*[][]int`).
+ReadAll reads a CSV input to the end and convert all rows into the slice passed as an argument.
+The argument `s` must be a pointer of a slice of a struct (`*[]myStruct`) or a pointer of a slice of a slice (`*[][]int`).
 Aside from that, the same rules of Read are applied to ReadAll. You need to specify how to map columns to struct fields using struct field's tag.
+
+Like `Loop`, you do not need to call `Done` after ReadAll. ReadAll returns the first error if it encounters errors. It returns `nil` if everything goes well.
+Do not forget to handle the error returned by ReadAll.
 
 ```golang
 var entry []struct {
@@ -219,6 +231,3 @@ if err := r.Done(); err != nil {
 }
 // Output: {Alice 1980-12-30 00:00:00 +0000 UTC}{Bob 1975-06-09 00:00:00 +0000 UTC}
 ```
-
-# godoc
-[godoc](https://godoc.org/github.com/yunabe/easycsv)

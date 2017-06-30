@@ -31,14 +31,14 @@ if err := r.Done(); err != nil {
 ## Read a CSV with Loop
 ```golang
 r := easycsv.NewReaderFile("testdata/sample.csv")
-r.Loop(func(entry *struct {
+err := r.Loop(func(entry *struct {
 	Name string `index:"0"`
 	Age  int    `index:"1"`
 }) error {
 	fmt.Print(entry)
 	return nil
 })
-if err := r.Done(); err != nil {
+if err != nil {
 	log.Fatalf("Failed to read a CSV file: %v", err)
 }
 ```
@@ -123,13 +123,13 @@ Also, `body` must be a function that returns `bool`, `error` or no return value.
 If `body` is a function that returns `bool`, Loop stops reading CSV at the line where `body` returns false.
 If `body` is a function that returns `error`, Loop stops reading CSV when `body` retruns an error.
 Loop does not stop until it reached to the end if `body` has no return value.
-If `body` retuns an error, Loop quits and the error is reported when `Done()` is called.
+If `body` retuns an error, Loop quits and the error.
 
 The example below shows how to use Loop with a function which returns `error`.
 This code reads CSV until Loop ends to EOF or an entry with Age < 0 is found in the CSV.
 
 ```golang
-r.Loop(func(entry *struct {
+err := r.Loop(func(entry *struct {
 	Name string `index:"0"`
 	Age  int    `index:"1"`
 }) error {
@@ -138,7 +138,7 @@ r.Loop(func(entry *struct {
 		return errors.New("Age mustn't be negative")
 	}
 })
-if err := r.Done(); err != nil {
+if err != nil {
 	log.Fatalf("Failed to read a CSV file: %v", err)
 }
 ```
@@ -157,7 +157,7 @@ var entry []struct {
 	Name string `index:"0"`
 	Age  int    `index:"1"`
 }
-r.ReadAll(&entry)
+err := r.ReadAll(&entry);
 ```
 
 # Option

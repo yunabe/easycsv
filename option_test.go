@@ -14,8 +14,7 @@ func TestReadTSV(t *testing.T) {
 		Comma: '\t',
 	})
 	var content [][]int
-	r.ReadAll(&content)
-	if err := r.Done(); err != nil {
+	if err := r.ReadAll(&content); err != nil {
 		t.Error(err)
 	}
 	expected := [][]int{{1, 2}, {3, 4}}
@@ -30,8 +29,7 @@ func TestSkipComment(t *testing.T) {
 		Comment: '#',
 	})
 	var content [][]int
-	r.ReadAll(&content)
-	if err := r.Done(); err != nil {
+	if err := r.ReadAll(&content); err != nil {
 		t.Error(err)
 	}
 	expected := [][]int{{1, 2}, {5, 6}}
@@ -48,8 +46,7 @@ func TestOptionWithNewReadCloser(t *testing.T) {
 		Comma: '\t',
 	})
 	var content [][]int
-	r.ReadAll(&content)
-	if err := r.Done(); err != nil {
+	if err := r.ReadAll(&content); err != nil {
 		t.Error(err)
 	}
 	expected := [][]int{{1, 2}, {3, 4}}
@@ -73,7 +70,7 @@ func TestCustomDecoder(t *testing.T) {
 	})
 	var msgs []string
 	var dates []string
-	r.Loop(func(e struct {
+	err := r.Loop(func(e struct {
 		Msg  string    `index:"0" enc:"custom"`
 		Date time.Time `index:"1" enc:"date"`
 	}) error {
@@ -81,7 +78,7 @@ func TestCustomDecoder(t *testing.T) {
 		dates = append(dates, e.Date.Format("2006/1/2"))
 		return nil
 	})
-	if err := r.Done(); err != nil {
+	if err != nil {
 		t.Error(err)
 	}
 	msgExpects := []string{"[hello]", "[world]"}
@@ -104,7 +101,7 @@ func TestCustomDecoder_wrongType(t *testing.T) {
 			"enc3": func(n int) (float32, bool) { return 1.0, true },
 		},
 	})
-	r.Loop(func(e struct {
+	err := r.Loop(func(e struct {
 		F0 string `index:"0" enc:"enc0"`
 		F1 string `index:"0" enc:"enc1"`
 		F2 string `index:"0" enc:"enc2"`
@@ -113,7 +110,6 @@ func TestCustomDecoder_wrongType(t *testing.T) {
 		t.Error("Loop read an entry unexpectedly")
 		return nil
 	})
-	err := r.Done()
 	if err == nil {
 		t.Errorf("Loop above must fail")
 	}

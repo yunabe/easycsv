@@ -1,16 +1,21 @@
 package easycsv
 
-import "errors"
+import (
+	"errors"
+)
 
 // Option specifies the spec of Reader.
 type Option struct {
+	// Comma is the field delimiter.
+	// For exampoe, if '\t' is set to Comma, Reader reads files as TSV files.
 	Comma rune
 	// Comment, if not 0, is the comment character. Lines beginning with the character without preceding whitespace are ignored.
-	Comment  rune
+	Comment rune
+	// Decoders is the map to define custom encodings.
 	Decoders map[string]interface{}
-	// TODO: Use AutoIndex
+	// TODO: Support AutoIndex
 	AutoIndex bool
-	// TODO: Use AutoName
+	// TODO: Support AutoName
 	AutoName bool
 }
 

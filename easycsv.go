@@ -102,8 +102,9 @@ var errorType = reflect.TypeOf((*error)(nil)).Elem()
 // Also, body must receive one argument. The argument must be a pointer to a struct, a struct or a pointer to a slice.
 // The line of csv is automatically converted to the struct or the slice based on the rule described above.
 //
-// Loop returns nothing. Use Done() to check an error encountered in Loop.
-func (r *Reader) Loop(body interface{}) {
+// Loop returns an error if it encounters an error and exits the loop.
+func (r *Reader) Loop(body interface{}) (err error) {
+	defer func() { err = r.Done() }()
 	if r.err != nil {
 		return
 	}
@@ -198,6 +199,7 @@ func (r *Reader) Loop(body interface{}) {
 		}
 		r.err = err
 	}
+	return
 }
 
 // Read reads one line from csv and store values in the line to e.
@@ -249,7 +251,10 @@ func (r *Reader) Read(e interface{}) bool {
 
 // ReadAll reads all rows from csv and store it into the slice s.
 // s must be a pointer to a slice of a struct (e.g. *[]entry) or a pointer to a slice of primitive types (e.g. *[][]int).
-func (r *Reader) ReadAll(s interface{}) {
+// ReadAll reports an error if it encounters an error while reading the input.
+// Also, ReadAll closes the file behind r automatically.
+func (r *Reader) ReadAll(s interface{}) (err error) {
+	defer func() { err = r.Done() }()
 	// TODO: Consolidate code with Read.
 	if s == nil {
 		r.err = errors.New("The argument of ReadAll must not be nil.")
@@ -295,6 +300,7 @@ func (r *Reader) ReadAll(s interface{}) {
 		}
 		// TODO: Append the line number to the error message.
 	}
+	return
 }
 
 func (r *Reader) nonEOFError() error {
@@ -306,6 +312,9 @@ func (r *Reader) nonEOFError() error {
 
 // Done returns the first non-EOF error that was encountered by the Reader.
 // Done also closes the internal Closer if the Reader is instantiated with NewReaderCloser.
+//
+// You need to use Done when you read CSV with Read method to check errors and close files behind.
+// You don't use Done when you read CSV with ReadAll and Loop because they call Done internally.
 func (r *Reader) Done() error {
 	if r.done {
 		return r.nonEOFError()

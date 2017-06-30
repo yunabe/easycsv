@@ -12,8 +12,7 @@ import "bytes"
 func TestLoopNil(t *testing.T) {
 	f := bytes.NewReader([]byte(""))
 	r := NewReader(f)
-	r.Loop(nil)
-	err := r.Done()
+	err := r.Loop(nil)
 	if err == nil || !strings.Contains(err.Error(), "must not be nil") {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -120,7 +119,7 @@ func TestLoop(t *testing.T) {
 	var ints []int
 	var floats []float32
 	var strs []string
-	r.Loop(func(e struct {
+	err := r.Loop(func(e struct {
 		Int   int     `index:"0"`
 		Float float32 `index:"1"`
 		Str   string  `index:"2"`
@@ -130,7 +129,7 @@ func TestLoop(t *testing.T) {
 		strs = append(strs, e.Str)
 		return nil
 	})
-	if err := r.Done(); err != nil {
+	if err != nil {
 		t.Error(err)
 		return
 	}
@@ -153,7 +152,7 @@ func TestLoopPointer(t *testing.T) {
 	r := NewReader(f)
 	var ints []int
 	var floats []float32
-	r.Loop(func(e *struct {
+	err := r.Loop(func(e *struct {
 		Int   int     `index:"0"`
 		Float float32 `index:"1"`
 	}) error {
@@ -161,7 +160,7 @@ func TestLoopPointer(t *testing.T) {
 		floats = append(floats, e.Float)
 		return nil
 	})
-	if err := r.Done(); err != nil {
+	if err != nil {
 		t.Error(err)
 	}
 	expectedInt := []int{10, 20, 30}
@@ -180,7 +179,7 @@ func TestLoopWithName(t *testing.T) {
 	var ints []int
 	var floats []float32
 	var strs []string
-	r.Loop(func(e struct {
+	err := r.Loop(func(e struct {
 		Int   int     `name:"int"`
 		Float float32 `name:"float"`
 		Str   string  `name:"str"`
@@ -190,7 +189,7 @@ func TestLoopWithName(t *testing.T) {
 		strs = append(strs, e.Str)
 		return nil
 	})
-	if err := r.Done(); err != nil {
+	if err != nil {
 		t.Error(err)
 		return
 	}
@@ -211,14 +210,13 @@ func TestLoopWithName(t *testing.T) {
 func TestLoopIndexOutOfRange(t *testing.T) {
 	f := bytes.NewReader([]byte("10,1.2\n20,2.3"))
 	r := NewReader(f)
-	r.Loop(func(e struct {
+	err := r.Loop(func(e struct {
 		Int   int     `index:"0"`
 		Float float32 `index:"2"`
 	}) error {
 		t.Error("The callback of Look is invoked unexpectedly")
 		return nil
 	})
-	err := r.Done()
 	if err == nil || err.Error() != "Accessed index 2 though the size of the row is 2" {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -227,14 +225,13 @@ func TestLoopIndexOutOfRange(t *testing.T) {
 func TestLoopMissingColumn(t *testing.T) {
 	f := bytes.NewReader([]byte("a,b\n10,1.2"))
 	r := NewReader(f)
-	r.Loop(func(e struct {
+	err := r.Loop(func(e struct {
 		Int   int     `name:"a"`
 		Float float32 `name:"c"`
 	}) error {
 		t.Error("The callback of Look is invoked unexpectedly")
 		return nil
 	})
-	err := r.Done()
 	if err == nil || err.Error() != "c did not appear in the first line" {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -244,11 +241,11 @@ func TestLoopWithSlice(t *testing.T) {
 	f := bytes.NewReader([]byte("10,20\n30,40"))
 	r := NewReader(f)
 	var rows [][]int
-	r.Loop(func(row []int) error {
+	err := r.Loop(func(row []int) error {
 		rows = append(rows, row)
 		return nil
 	})
-	if err := r.Done(); err != nil {
+	if err != nil {
 		t.Error(err)
 		return
 	}
@@ -262,11 +259,11 @@ func TestLoopBreak(t *testing.T) {
 	f := bytes.NewReader([]byte("10,20\n30,40"))
 	r := NewReader(f)
 	var rows [][]int
-	r.Loop(func(row []int) error {
+	err := r.Loop(func(row []int) error {
 		rows = append(rows, row)
 		return Break
 	})
-	if err := r.Done(); err != nil {
+	if err != nil {
 		t.Error(err)
 		return
 	}
@@ -281,11 +278,11 @@ func TestLoopBreakWithError(t *testing.T) {
 	r := NewReader(f)
 	e := errors.New("error")
 	var rows [][]int
-	r.Loop(func(row []int) error {
+	err := r.Loop(func(row []int) error {
 		rows = append(rows, row)
 		return e
 	})
-	if err := r.Done(); err != e {
+	if err != e {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
@@ -407,12 +404,11 @@ func TestReadAllStruct(t *testing.T) {
 		Float float32 `index:"1"`
 	}
 	var s []entry
-	r.ReadAll(&s)
-	expected := []entry{{Int: 10, Float: 2.3}, {Int: 30, Float: 4.5}}
-	if err := r.Done(); err != nil {
+	if err := r.ReadAll(&s); err != nil {
 		t.Error(err)
 		return
 	}
+	expected := []entry{{Int: 10, Float: 2.3}, {Int: 30, Float: 4.5}}
 	if !reflect.DeepEqual(expected, s) {
 		t.Errorf("Expected %v but got %v", expected, s)
 	}
@@ -422,8 +418,7 @@ func TestReadAllSlice(t *testing.T) {
 	f := bytes.NewReader([]byte("10,20\n30,40"))
 	r := NewReader(f)
 	var s [][]int
-	r.ReadAll(&s)
-	if err := r.Done(); err != nil {
+	if err := r.ReadAll(&s); err != nil {
 		t.Error(err)
 		return
 	}
@@ -515,14 +510,14 @@ func TestLineNumber(t *testing.T) {
 	r := NewReader(f)
 	var ints []int
 	var lineno []int
-	r.Loop(func(e struct {
+	err := r.Loop(func(e struct {
 		Int int `index:"0"`
 	}) error {
 		ints = append(ints, e.Int)
 		lineno = append(lineno, r.LineNumber())
 		return nil
 	})
-	if err := r.Done(); err != nil {
+	if err != nil {
 		t.Error(err)
 		return
 	}

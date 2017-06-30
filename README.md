@@ -172,7 +172,21 @@ Like [csv.Reader](https://golang.org/pkg/encoding/csv/#Reader) in the standard l
 ## Comment
 Comment, if not 0, is the comment character. Lines beginning with the character without preceding whitespace are ignored.
 
-# Customizing converters
+# Customizing decoders
+By default, easycsv converts strings in CSV to integers, floats and bool automatically based on the types of struct fields and slices.
+
+- Integers are parsed with `strconv.ParseInt` and unsigned integers are parsed with `strconv.ParseUint`.
+  easycsv parses inputs as decimals by default. But it parses inputs as hex if inputs have `"0x"` prefix and
+  as octal if inputs have `"0"` prefix (`"0xff"` → 255, `"077"` → 63).
+- Floats are parsed with `strconv.ParseFloat`.
+- bool is parsed with `strconv.ParseBool`.
+
+You can customize how to decode strings in CSV to values by specifying `enc` attribute to struct fields.
+
+## Predefined encoding
+TBD
+
+## Custom encoding
 TBD
 
 # godoc

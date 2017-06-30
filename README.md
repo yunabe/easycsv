@@ -120,7 +120,7 @@ Do not forget to call `Done` after `Read`.
 func (r *Reader) Loop(body interface{}) (err error)
 ```
 
-Loop reads CSV line by line and executes `body` with a line everytime it reads a line.
+[Loop](https://godoc.org/github.com/yunabe/easycsv#Loop) reads CSV line by line and executes `body` with a line everytime it reads a line.
 `body` must be a function that receives a struct (e.g. `myStruct`), a pointer of a struct (e.g. `*myStruct`) or a slice of primitives (e.g. `[]int`).
 A line of CSV is automatically converted to the argument of `body` when Loop reads the line and passed to `body`.
 Also, `body` must be a function that returns `bool`, `error` or no return value.
@@ -157,7 +157,7 @@ if err != nil {
 func (r *Reader) ReadAll(s interface{}) (err error)
 ```
 
-ReadAll reads a CSV input to the end and convert all rows into the slice passed as an argument.
+[ReadAll](https://godoc.org/github.com/yunabe/easycsv#ReadAll) reads a CSV input to the end and convert all rows into the slice passed as an argument.
 The argument `s` must be a pointer of a slice of a struct (`*[]myStruct`) or a pointer of a slice of a slice (`*[][]int`).
 Aside from that, the same rules of Read are applied to ReadAll. You need to specify how to map columns to struct fields using struct field's tag.
 

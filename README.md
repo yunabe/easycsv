@@ -184,10 +184,41 @@ By default, easycsv converts strings in CSV to integers, floats and bool automat
 You can customize how to decode strings in CSV to values by specifying `enc` attribute to struct fields.
 
 ## Predefined encoding
-TBD
+easycsv has three predefined custom encoding for integers.
+
+- `oct` - Parses inputs as decimal integers even if the inputs are prefixed with `"0"`.
+- `hex` - Parses inputs as hex integers.
+- `deci`- Parses inputs as oct integers.
 
 ## Custom encoding
-TBD
+Also, you can use custom encodings in easycsv.
+
+To use custom encodings:
+- Define a func that convert strings to your custom types. This func must receive a string and returns (custom-type, error).
+- Register the func to Option.Decoders.
+- Specify the registered func name with `enc` struct-field attribute.
+
+```golang
+r := NewReader(bytes.NewBufferString("name,birthday\nAlice,1980-12-30\nBob,1975-06-09"),
+	Option{
+		Decoders: map[string]interface{}{
+			"date": func(s string) (time.Time, error) {
+				return time.Parse("2006-01-02", s)
+			},
+	},
+	})
+var entry struct {
+	Name  string    `name:"name"`
+	Birth time.Time `name:"birthday" enc:"date"`
+}
+for r.Read(&entry) {
+	fmt.Print(entry)
+}
+if err := r.Done(); err != nil {
+	fmt.Printf("Failed: %v\n", err)
+}
+// Output: {Alice 1980-12-30 00:00:00 +0000 UTC}{Bob 1975-06-09 00:00:00 +0000 UTC}
+```
 
 # godoc
 [godoc](https://godoc.org/github.com/yunabe/easycsv)

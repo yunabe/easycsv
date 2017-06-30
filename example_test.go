@@ -68,6 +68,22 @@ func ExampleReader_tSV() {
 	// Output: {Alice 10}{Bob 20}
 }
 
+func ExampleReader_encodings() {
+	r := NewReader(bytes.NewReader([]byte("010,010,010")))
+	var entry struct {
+		Deci int `index:"0" enc:"deci"`
+		Oct  int `index:"1" enc:"oct"`
+		Hex  int `index:"2" enc:"hex"`
+	}
+	for r.Read(&entry) {
+		fmt.Print(entry)
+	}
+	if err := r.Done(); err != nil {
+		fmt.Print(err)
+	}
+	// Output: {10 8 16}
+}
+
 func ExampleReader_LineNumber_reader() {
 	r := NewReaderFile("testdata/sample.csv")
 	var entry struct {

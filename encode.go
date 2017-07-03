@@ -1,6 +1,7 @@
 package easycsv
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -72,6 +73,37 @@ func createIntConverter(t reflect.Type, base int) interface{} {
 	default:
 		return nil
 	}
+}
+
+func validateTypeDecoder(t reflect.Type, conv interface{}) error {
+	// TODO: Test error handlings.
+	convT := reflect.TypeOf(conv)
+	if convT.Kind() != reflect.Func {
+		return fmt.Errorf("The decoder for %v must be a function but %v", t, convT)
+	}
+	if convT.NumIn() != 1 || convT.NumOut() != 2 {
+		return fmt.Errorf("The decoder for %v must receive one arguments and returns two values", t)
+	}
+	if convT.In(0).Kind() != reflect.String {
+		return fmt.Errorf("The decoder for %v must receive a string as the first arg, but receives %v", t, convT.In(0))
+	}
+	if convT.Out(0) != t || convT.Out(1) != errorType {
+		return fmt.Errorf("The decoder for %v must return (%v, error), but returned (%v, %v)",
+			t, t, convT.Out(0), convT.Out(1))
+	}
+	return nil
+}
+
+func createConverterFromType(opt Option, t reflect.Type) (interface{}, error) {
+	if opt.TypeDecoders != nil {
+		if conv, ok := opt.TypeDecoders[t]; ok {
+			if err := validateTypeDecoder(t, conv); err != nil {
+				return nil, err
+			}
+			return conv, nil
+		}
+	}
+	return createDefaultConverter(t), nil
 }
 
 func createDefaultConverter(t reflect.Type) interface{} {

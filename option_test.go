@@ -126,3 +126,55 @@ func TestCustomDecoder_wrongType(t *testing.T) {
 		t.Errorf("Unexpected errors: %v", err)
 	}
 }
+
+func TestTypeDecoders(t *testing.T) {
+	f := bytes.NewBufferString("2013-01-02,2010-11-12\n2015-11-19,2012-01-02")
+	r := NewReader(f, Option{
+		TypeDecoders: map[reflect.Type]interface{}{
+			reflect.TypeOf(time.Time{}): func(s string) (time.Time, error) {
+				return time.Parse("2006-01-02", s)
+			},
+		},
+	})
+	var entry struct {
+		Date0 time.Time `index:"0"`
+		Date1 time.Time `index:"1"`
+	}
+	var all []string
+	for r.Read(&entry) {
+		all = append(all, entry.Date0.Format("2006/1/2"))
+		all = append(all, entry.Date1.Format("Jan 2, 2006"))
+	}
+	if err := r.Done(); err != nil {
+		t.Error(err)
+	}
+	expected := []string{"2013/1/2", "Nov 12, 2010", "2015/11/19", "Jan 2, 2012"}
+	if !reflect.DeepEqual(expected, all) {
+		t.Errorf("Expecte %#v but got %#v", expected, all)
+	}
+}
+
+func TestTypeDecodersWithSlice(t *testing.T) {
+	f := bytes.NewBufferString("2013-01-02,2010-11-12\n2015-11-19,2012-01-02")
+	r := NewReader(f, Option{
+		TypeDecoders: map[reflect.Type]interface{}{
+			reflect.TypeOf(time.Time{}): func(s string) (time.Time, error) {
+				return time.Parse("2006-01-02", s)
+			},
+		},
+	})
+	var row []time.Time
+	var all []string
+	for r.Read(&row) {
+		for _, e := range row {
+			all = append(all, e.Format("2006/1/2"))
+		}
+	}
+	if err := r.Done(); err != nil {
+		t.Error(err)
+	}
+	expected := []string{"2013/1/2", "2010/11/12", "2015/11/19", "2012/1/2"}
+	if !reflect.DeepEqual(expected, all) {
+		t.Errorf("Expecte %#v but got %#v", expected, all)
+	}
+}

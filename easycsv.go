@@ -429,7 +429,11 @@ func parseStructTag(
 		}
 	}
 	if conv == nil {
-		conv = createDefaultConverter(field.Type)
+		var err error
+		conv, err = createConverterFromType(opt, field.Type)
+		if err != nil {
+			*errors = append(*errors, err.Error())
+		}
 	}
 	if conv == nil {
 		*errors = append(*errors, fmt.Sprintf("Unexpected field type for %s: %s", field.Name, field.Type))
@@ -452,14 +456,17 @@ func newDecoder(opt Option, t reflect.Type) (rowDecoder, error) {
 	if t.Kind() == reflect.Struct {
 		return newStructDecoder(opt, t)
 	} else if t.Kind() == reflect.Slice {
-		return newSliceDecoder(t)
+		return newSliceDecoder(opt, t)
 	}
 	panic("newDecoder must be called with struct or slice.")
 }
 
-func newSliceDecoder(t reflect.Type) (rowDecoder, error) {
+func newSliceDecoder(opt Option, t reflect.Type) (rowDecoder, error) {
 	elem := t.Elem()
-	c := createDefaultConverter(elem)
+	c, err := createConverterFromType(opt, elem)
+	if err != nil {
+		return nil, err
+	}
 	if c == nil {
 		return nil, fmt.Errorf("Failed to create a converter for %v", t)
 	}

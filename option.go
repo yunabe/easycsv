@@ -2,6 +2,7 @@ package easycsv
 
 import (
 	"errors"
+	"reflect"
 )
 
 // Option specifies the spec of Reader.
@@ -13,6 +14,9 @@ type Option struct {
 	Comment rune
 	// Decoders is the map to define custom encodings.
 	Decoders map[string]interface{}
+	// Custom decoders to parse specific types.
+	TypeDecoders map[reflect.Type]interface{}
+
 	// TODO: Support AutoIndex
 	AutoIndex bool
 	// TODO: Support AutoName
@@ -38,6 +42,14 @@ func (a *Option) mergeOption(b Option) {
 		}
 		for name, dec := range b.Decoders {
 			a.Decoders[name] = dec
+		}
+	}
+	if b.TypeDecoders != nil {
+		if a.TypeDecoders == nil {
+			a.TypeDecoders = make(map[reflect.Type]interface{})
+		}
+		for t, dec := range b.TypeDecoders {
+			a.TypeDecoders[t] = dec
 		}
 	}
 }

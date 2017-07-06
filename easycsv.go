@@ -54,7 +54,7 @@ func NewReader(r io.Reader, opts ...Option) *Reader {
 	return &rd
 }
 
-// NewReaderCloser returns a new Reader to read CSV from r.
+// NewReadCloser returns a new Reader to read CSV from r.
 // Reader instantiated with NewReadCloser closes r automatically when Done() is called.
 func NewReadCloser(r io.ReadCloser, opts ...Option) *Reader {
 	opt, err := mergeOptions(opts)

@@ -231,3 +231,27 @@ if err := r.Done(); err != nil {
 }
 // Output: {Alice 1980-12-30 00:00:00 +0000 UTC}{Bob 1975-06-09 00:00:00 +0000 UTC}
 ```
+
+## Customizing decoders for types
+You can also define how to convert strings into specific types in easycsv by using Option.TypeDecoders option. Option.TypeDecoders is similar to Option.Decoders. The key is `reflect.Type` and the value is a function to convert strings to the specific type.
+Reader uses the functions registered to Option.TypeDecoders instead of default converters when it converts rows in CSV into those types.
+
+The following example shows how to define a converter for `time.Time` with Option.TypeDecoders.
+
+```golang
+r := NewReader(bytes.NewReader([]byte("2017-01-02,2016-02-03\n2015-03-04,2014-04-05")),
+	Option{TypeDecoders: map[reflect.Type]interface{}{
+		reflect.TypeOf(time.Time{}): func(s string) (time.Time, error) {
+			return time.Parse("2006-01-02", s)
+		},
+	}})
+var entry []time.Time
+for r.Read(&entry) {
+	for _, e := range entry {
+		fmt.Print(e.Format("2006/1/2"), ";")
+	}
+}
+if err := r.Done(); err != nil {
+	fmt.Print(err)
+}
+```

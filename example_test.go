@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"reflect"
 	"time"
 )
 
@@ -81,6 +82,25 @@ func ExampleReader_encodings() {
 		fmt.Print(err)
 	}
 	// Output: {10 8 16}
+}
+
+func ExampleReader_typeEncodings() {
+	r := NewReader(bytes.NewReader([]byte("2017-01-02,2016-02-03\n2015-03-04,2014-04-05")),
+		Option{TypeDecoders: map[reflect.Type]interface{}{
+			reflect.TypeOf(time.Time{}): func(s string) (time.Time, error) {
+				return time.Parse("2006-01-02", s)
+			},
+		}})
+	var entry []time.Time
+	for r.Read(&entry) {
+		for _, e := range entry {
+			fmt.Print(e.Format("2006/1/2"), ";")
+		}
+	}
+	if err := r.Done(); err != nil {
+		fmt.Print(err)
+	}
+	// Output: 2017/1/2;2016/2/3;2015/3/4;2014/4/5;
 }
 
 func ExampleReader_LineNumber_reader() {

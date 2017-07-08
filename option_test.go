@@ -178,3 +178,48 @@ func TestTypeDecodersWithSlice(t *testing.T) {
 		t.Errorf("Expecte %#v but got %#v", expected, all)
 	}
 }
+
+func TestTypeDecodersErrors(t *testing.T) {
+	tests := []struct {
+		decoder interface{}
+		suberr  string
+	}{
+		{
+			decoder: "decoder",
+			suberr:  "must be a function but string",
+		}, {
+			decoder: func(s string) (int, error) {
+				return 0, nil
+			},
+			suberr: "but returned (int, error)",
+		}, {
+			decoder: func(s string) time.Time {
+				return time.Now()
+			},
+			suberr: "must receive one arguments and returns two values",
+		}, {
+			decoder: func(i int) (time.Time, error) {
+				return time.Now(), nil
+			},
+			suberr: "must receive a string as the first arg, but receives int",
+		},
+	}
+	for _, test := range tests {
+		f := bytes.NewBufferString("2013-01-02,2010-11-12\n2015-11-19,2012-01-02")
+		r := NewReader(f, Option{
+			TypeDecoders: map[reflect.Type]interface{}{
+				reflect.TypeOf(time.Time{}): test.decoder,
+			},
+		})
+		var row []time.Time
+		var all []string
+		for r.Read(&row) {
+			for _, e := range row {
+				all = append(all, e.Format("2006/1/2"))
+			}
+		}
+		if err := r.Done(); err == nil || !strings.Contains(err.Error(), test.suberr) {
+			t.Errorf("Expected %q is contained in the error. But the error was %v", test.suberr, err)
+		}
+	}
+}

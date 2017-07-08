@@ -76,7 +76,6 @@ func createIntConverter(t reflect.Type, base int) interface{} {
 }
 
 func validateTypeDecoder(t reflect.Type, conv interface{}) error {
-	// TODO: Test error handlings.
 	convT := reflect.TypeOf(conv)
 	if convT.Kind() != reflect.Func {
 		return fmt.Errorf("The decoder for %v must be a function but %v", t, convT)

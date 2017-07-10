@@ -1,13 +1,13 @@
 package easycsv
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"reflect"
 	"strings"
 	"testing"
 )
-import "bytes"
 
 func TestLoopNil(t *testing.T) {
 	f := bytes.NewReader([]byte(""))

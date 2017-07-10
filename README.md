@@ -198,9 +198,9 @@ You can customize how to decode strings in CSV to values by specifying `enc` att
 ## Predefined encoding
 easycsv has three predefined custom encoding for integers.
 
-- `oct` - Parses inputs as decimal integers even if the inputs are prefixed with `"0"`.
+- `deci` - Parses inputs as decimal integers even if the inputs are prefixed with `"0"`.
 - `hex` - Parses inputs as hex integers.
-- `deci`- Parses inputs as oct integers.
+- `oct`- Parses inputs as oct integers.
 
 ## Custom encoding
 Also, you can use custom encodings in easycsv.

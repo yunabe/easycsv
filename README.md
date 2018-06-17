@@ -1,4 +1,4 @@
-# easycsv
+# easycsv [![Go Report Card](https://goreportcard.com/badge/github.com/yunabe/easycsv)](https://goreportcard.com/report/github.com/yunabe/easycsv)
 easycsv package provides API to read CSV files in Go (golang) easily.
 
 # Installation

@@ -345,7 +345,7 @@ func (r *Reader) DoneDefer(err *error) {
 
 // LineNumber returns the current position of r in the input (1-based line number).
 // The behavior of LineNumber is undefined if it is called before Read operations or
-// after r reched to EOF or an error.
+// after r reached to EOF or an error.
 func (r *Reader) LineNumber() int {
 	return r.lineno
 }

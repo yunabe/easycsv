@@ -1,14 +1,13 @@
 package easycsv
 
 import (
-	"strings"
+	"reflect"
 	"testing"
 	"time"
 )
 
-func TestIssue1(t *testing.T) {
+func TestIssue1Fixed(t *testing.T) {
 	// https://github.com/yunabe/easycsv/issues/1
-	// TODO(yunabe): Fix this bug.
 	r := NewReaderFile("testdata/issue1.csv", Option{
 		Decoders: map[string]interface{}{
 			"date": func(s string) (time.Time, error) {
@@ -26,12 +25,16 @@ func TestIssue1(t *testing.T) {
 		names = append(names, entry.Name)
 		births = append(births, entry.Birth.Format("2006/01/02"))
 	}
-	expectedErr := "\"date\" is not defined"
-	err := r.Done()
-	if err == nil {
-		t.Errorf("Expected %v but got no error", expectedErr)
+	if err := r.Done(); err != nil {
+		t.Error(err)
+		return
 	}
-	if !strings.Contains(err.Error(), expectedErr) {
-		t.Errorf("expected an error with %q but got %q", expectedErr, err)
+	nameExpects := []string{"Alice", "Bob"}
+	birthExpects := []string{"1980/12/30", "1975/06/09"}
+	if !reflect.DeepEqual(names, nameExpects) {
+		t.Errorf("Expected %v but got %v", nameExpects, names)
+	}
+	if !reflect.DeepEqual(births, birthExpects) {
+		t.Errorf("Expected %v but got %v", birthExpects, births)
 	}
 }

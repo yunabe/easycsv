@@ -63,6 +63,7 @@ func NewReadCloser(r io.ReadCloser, opts ...Option) *Reader {
 	}
 	return &Reader{
 		csv:    newCSVReader(r, opt),
+		opt:    opt,
 		closer: r,
 	}
 }

@@ -1,4 +1,4 @@
-# easycsv [![Build Status](https://travis-ci.org/yunabe/easycsv.svg?branch=master)](https://travis-ci.org/yunabe/easycsv) [![Go Report Card](https://goreportcard.com/badge/github.com/yunabe/easycsv)](https://goreportcard.com/report/github.com/yunabe/easycsv)
+# easycsv [![Build Status](https://travis-ci.org/yunabe/easycsv.svg?branch=master)](https://travis-ci.org/yunabe/easycsv) [![Go Report Card](https://goreportcard.com/badge/github.com/yunabe/easycsv)](https://goreportcard.com/report/github.com/yunabe/easycsv) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/yunabe/easycsv-binder/master?filepath=example.ipynb)
 easycsv package provides API to read CSV files in Go (golang) easily.
 
 # Installation

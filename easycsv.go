@@ -38,6 +38,10 @@ func newCSVReader(r io.Reader, opt Option) *csv.Reader {
 	if opt.Comment != 0 {
 		cr.Comment = opt.Comment
 	}
+	if opt.LazyQuotes {
+		cr.LazyQuotes = opt.LazyQuotes
+	}
+
 	return cr
 }
 

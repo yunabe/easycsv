@@ -38,6 +38,22 @@ func TestSkipComment(t *testing.T) {
 	}
 }
 
+func TestLazyQuotes(t *testing.T) {
+	f := bytes.NewBufferString("1,2,3,\"\"4\",5")
+	r := NewReader(f, Option{
+		LazyQuotes: true,
+		Comment:    '#',
+	})
+	var content [][]string
+	if err := r.ReadAll(&content); err != nil {
+		t.Error(err)
+	}
+	expected := [][]string{{"1", "2", "3", "\"4", "5"}}
+	if !reflect.DeepEqual(expected, content) {
+		t.Errorf("Expected %v but got %v", expected, content)
+	}
+}
+
 func TestOptionWithNewReadCloser(t *testing.T) {
 	f := &fakeCloser{
 		reader: bytes.NewBufferString("1\t2\n3\t4\n"),

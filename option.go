@@ -12,6 +12,8 @@ type Option struct {
 	Comma rune
 	// Comment, if not 0, is the comment character. Lines beginning with the character without preceding whitespace are ignored.
 	Comment rune
+	// Allow lazy parsing of quotes, default to false
+	LazyQuotes bool
 	// Decoders is the map to define custom encodings.
 	Decoders map[string]interface{}
 	// Custom decoders to parse specific types.
@@ -35,6 +37,9 @@ func (a *Option) mergeOption(b Option) {
 	}
 	if b.AutoName {
 		a.AutoName = true
+	}
+	if b.LazyQuotes {
+		a.LazyQuotes = b.LazyQuotes
 	}
 	if b.Decoders != nil {
 		if a.Decoders == nil {

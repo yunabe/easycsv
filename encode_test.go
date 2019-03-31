@@ -2,22 +2,19 @@ package easycsv
 
 import (
 	"bytes"
-	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestConverterInt(t *testing.T) {
 	r := NewReader(bytes.NewBufferString("10,0xff,017"))
-	var row []int
-	ok := r.Read(&row)
+	var got []int
+	ok := r.Read(&got)
 	if !ok {
-		t.Error("Read returned false unexpectedly")
+		t.Fatal("Read returned false unexpectedly")
 	}
-	expect := []int{10, 255, 15}
-	if !reflect.DeepEqual(expect, row) {
-		t.Errorf("Expected %v but got %v", expect, row)
-	}
+	want := []int{10, 255, 15}
+	noDiff(t, "Read()", got, want)
 }
 
 func TestConverterInvalidWithSlice(t *testing.T) {

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestReadTSV(t *testing.T) {
@@ -13,14 +15,12 @@ func TestReadTSV(t *testing.T) {
 	r := NewReader(f, Option{
 		Comma: '\t',
 	})
-	var content [][]int
-	if err := r.ReadAll(&content); err != nil {
-		t.Error(err)
+	var got [][]int
+	if err := r.ReadAll(&got); err != nil {
+		t.Fatalf("Failed to read: %v", err)
 	}
-	expected := [][]int{{1, 2}, {3, 4}}
-	if !reflect.DeepEqual(expected, content) {
-		t.Errorf("Expected %v but got %v", expected, content)
-	}
+	want := [][]int{{1, 2}, {3, 4}}
+	noDiff(t, "ReadAll() with tsv", got, want)
 }
 
 func TestSkipComment(t *testing.T) {
@@ -28,14 +28,12 @@ func TestSkipComment(t *testing.T) {
 	r := NewReader(f, Option{
 		Comment: '#',
 	})
-	var content [][]int
-	if err := r.ReadAll(&content); err != nil {
-		t.Error(err)
+	var got [][]int
+	if err := r.ReadAll(&got); err != nil {
+		t.Fatalf("Failed to read: %v", err)
 	}
-	expected := [][]int{{1, 2}, {5, 6}}
-	if !reflect.DeepEqual(expected, content) {
-		t.Errorf("Expected %v but got %v", expected, content)
-	}
+	want := [][]int{{1, 2}, {5, 6}}
+	noDiff(t, "ReadAll() with Comment", got, want)
 }
 
 func TestLazyQuotes(t *testing.T) {
@@ -44,14 +42,12 @@ func TestLazyQuotes(t *testing.T) {
 		LazyQuotes: true,
 		Comment:    '#',
 	})
-	var content [][]string
-	if err := r.ReadAll(&content); err != nil {
-		t.Error(err)
+	var got [][]string
+	if err := r.ReadAll(&got); err != nil {
+		t.Fatalf("Failed to read: %v", err)
 	}
-	expected := [][]string{{"1", "2", "3", "\"4", "5"}}
-	if !reflect.DeepEqual(expected, content) {
-		t.Errorf("Expected %v but got %v", expected, content)
-	}
+	want := [][]string{{"1", "2", "3", "\"4", "5"}}
+	noDiff(t, "ReadAll() with LazyQuotes", got, want)
 }
 
 func TestOptionWithNewReadCloser(t *testing.T) {
@@ -61,14 +57,12 @@ func TestOptionWithNewReadCloser(t *testing.T) {
 	r := NewReadCloser(f, Option{
 		Comma: '\t',
 	})
-	var content [][]int
-	if err := r.ReadAll(&content); err != nil {
-		t.Error(err)
+	var got [][]int
+	if err := r.ReadAll(&got); err != nil {
+		t.Fatalf("Failed to read: %v", err)
 	}
-	expected := [][]int{{1, 2}, {3, 4}}
-	if !reflect.DeepEqual(expected, content) {
-		t.Errorf("Expected %v but got %v", expected, content)
-	}
+	want := [][]int{{1, 2}, {3, 4}}
+	noDiff(t, "results", got, want)
 	if !f.closed {
 		t.Error("f is not closed")
 	}
@@ -95,15 +89,15 @@ func TestCustomDecoder(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Error(err)
+		t.Fatalf("Loop failed: %v", err)
 	}
-	msgExpects := []string{"[hello]", "[world]"}
-	dateExpects := []string{"2010/11/12", "2012/1/2"}
-	if !reflect.DeepEqual(msgs, msgExpects) {
-		t.Errorf("Expected %v but got %v", msgExpects, msgs)
+	msgsWant := []string{"[hello]", "[world]"}
+	datesWant := []string{"2010/11/12", "2012/1/2"}
+	if diff := cmp.Diff(msgsWant, msgs); diff != "" {
+		t.Errorf("mismatch of msgs (-want +got):\n%s", diff)
 	}
-	if !reflect.DeepEqual(dates, dateExpects) {
-		t.Errorf("Expected %v but got %v", dateExpects, dates)
+	if diff := cmp.Diff(datesWant, dates); diff != "" {
+		t.Errorf("mismatch of dates (-want +got):\n%s", diff)
 	}
 }
 
@@ -162,12 +156,10 @@ func TestTypeDecoders(t *testing.T) {
 		all = append(all, entry.Date1.Format("Jan 2, 2006"))
 	}
 	if err := r.Done(); err != nil {
-		t.Error(err)
+		t.Fatalf("Failed to Done: %v", err)
 	}
-	expected := []string{"2013/1/2", "Nov 12, 2010", "2015/11/19", "Jan 2, 2012"}
-	if !reflect.DeepEqual(expected, all) {
-		t.Errorf("Expecte %#v but got %#v", expected, all)
-	}
+	want := []string{"2013/1/2", "Nov 12, 2010", "2015/11/19", "Jan 2, 2012"}
+	noDiff(t, "all", all, want)
 }
 
 func TestTypeDecodersWithSlice(t *testing.T) {
@@ -187,12 +179,10 @@ func TestTypeDecodersWithSlice(t *testing.T) {
 		}
 	}
 	if err := r.Done(); err != nil {
-		t.Error(err)
+		t.Fatalf("Failed to Done: %v", err)
 	}
-	expected := []string{"2013/1/2", "2010/11/12", "2015/11/19", "2012/1/2"}
-	if !reflect.DeepEqual(expected, all) {
-		t.Errorf("Expecte %#v but got %#v", expected, all)
-	}
+	want := []string{"2013/1/2", "2010/11/12", "2015/11/19", "2012/1/2"}
+	noDiff(t, "all", all, want)
 }
 
 func TestTypeDecodersErrors(t *testing.T) {
@@ -234,8 +224,12 @@ func TestTypeDecodersErrors(t *testing.T) {
 				all = append(all, e.Format("2006/1/2"))
 			}
 		}
-		if err := r.Done(); err == nil || !strings.Contains(err.Error(), test.suberr) {
-			t.Errorf("Expected %q is contained in the error. But the error was %v", test.suberr, err)
+		err := r.Done()
+		if err == nil {
+			t.Error("Done() returned nil unexpectedly")
+		}
+		if !strings.Contains(err.Error(), test.suberr) {
+			t.Errorf("%q does not contains %q", err.Error(), test.suberr)
 		}
 	}
 }

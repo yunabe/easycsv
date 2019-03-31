@@ -79,7 +79,7 @@ func ExampleReader_encodings() {
 		fmt.Print(entry)
 	}
 	if err := r.Done(); err != nil {
-		fmt.Print(err)
+		log.Fatalf("Failed to read: %v", err)
 	}
 	// Output: {10 8 16}
 }
@@ -98,7 +98,7 @@ func ExampleReader_typeEncodings() {
 		}
 	}
 	if err := r.Done(); err != nil {
-		fmt.Print(err)
+		log.Fatalf("Failed to read: %v", err)
 	}
 	// Output: 2017/1/2;2016/2/3;2015/3/4;2014/4/5;
 }
@@ -159,7 +159,7 @@ func ExampleOption_decoders() {
 		fmt.Print(entry)
 	}
 	if err := r.Done(); err != nil {
-		fmt.Printf("Failed: %v\n", err)
+		log.Fatalf("Failed: %v\n", err)
 	}
 	// Output: {Alice 1980-12-30 00:00:00 +0000 UTC}{Bob 1975-06-09 00:00:00 +0000 UTC}
 }

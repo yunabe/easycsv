@@ -7,7 +7,17 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
+
+// noDiff compares got and want and show an error if there is a diff.
+func noDiff(t *testing.T, name string, got, want interface{}) {
+	t.Helper()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("%s mismatch (-want +got):\n%s", name, diff)
+	}
+}
 
 func TestLoopNil(t *testing.T) {
 	f := bytes.NewReader([]byte(""))
@@ -23,10 +33,9 @@ func TestReadNil(t *testing.T) {
 	r := NewReader(f)
 	ok := r.Read(nil)
 	if ok {
-		t.Error("Loop returned true unexpectedly")
-		return
+		t.Fatal("Read returned true unexpectedly")
 	}
-	if err := r.Done(); err == nil || !strings.Contains(err.Error(), "must not be nil.") {
+	if err := r.Done(); err == nil || !strings.Contains(err.Error(), "must not be nil") {
 		t.Errorf("Unexpected eror: %v", err)
 	}
 }
@@ -50,11 +59,10 @@ func TestCloser(t *testing.T) {
 	c := &fakeCloser{}
 	r := NewReadCloser(c)
 	if err := r.Done(); err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Done failed: %v", err)
 	}
 	if !c.closed {
-		t.Error("c is not closed.")
+		t.Error("c is not closed")
 	}
 }
 
@@ -72,7 +80,7 @@ func TestCloserWithError(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	if !c.closed {
-		t.Error("c is not closed.")
+		t.Error("c is not closed")
 	}
 }
 
@@ -84,7 +92,7 @@ func TestCloserEOFAndError(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	if !c.closed {
-		t.Error("c is not closed.")
+		t.Error("c is not closed")
 	}
 }
 
@@ -98,7 +106,7 @@ func TestCloserDontOverwriteError(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	if !c.closed {
-		t.Error("c is not closed.")
+		t.Error("c is not closed")
 	}
 }
 
@@ -130,21 +138,11 @@ func TestLoop(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Loop failed: %v", err)
 	}
-	expectedInt := []int{10, 20, 30}
-	expectedFloat := []float32{1.2, 2.3, 3.4}
-	expectedStr := []string{"alpha", "beta", "gamma"}
-	if !reflect.DeepEqual(expectedInt, ints) {
-		t.Errorf("Expected %#v but got %#v", expectedInt, ints)
-	}
-	if !reflect.DeepEqual(expectedFloat, floats) {
-		t.Errorf("Expected %#v but got %#v", expectedFloat, floats)
-	}
-	if !reflect.DeepEqual(expectedStr, strs) {
-		t.Errorf("Expected %#v but got %#v", expectedStr, strs)
-	}
+	noDiff(t, "ints", ints, []int{10, 20, 30})
+	noDiff(t, "floats", floats, []float32{1.2, 2.3, 3.4})
+	noDiff(t, "strs", strs, []string{"alpha", "beta", "gamma"})
 }
 
 func TestLoopPointer(t *testing.T) {
@@ -161,16 +159,12 @@ func TestLoopPointer(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Error(err)
+		t.Fatalf("Loop failed: %v", err)
 	}
-	expectedInt := []int{10, 20, 30}
-	expectedFloat := []float32{1.2, 2.3, 3.4}
-	if !reflect.DeepEqual(expectedInt, ints) {
-		t.Errorf("Unexpected %#v but got %#v", expectedInt, ints)
-	}
-	if !reflect.DeepEqual(expectedFloat, floats) {
-		t.Errorf("Unexpected %#v but got %#v", expectedFloat, floats)
-	}
+	wantInt := []int{10, 20, 30}
+	wantFloat := []float32{1.2, 2.3, 3.4}
+	noDiff(t, "ints", ints, wantInt)
+	noDiff(t, "floats", floats, wantFloat)
 }
 
 func TestLoopWithName(t *testing.T) {
@@ -190,21 +184,14 @@ func TestLoopWithName(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Loop failed: %v", err)
 	}
-	expectedInt := []int{10, 20, 30}
-	expectedFloat := []float32{1.2, 2.3, 3.4}
-	expectedStr := []string{"alpha", "beta", "gamma"}
-	if !reflect.DeepEqual(expectedInt, ints) {
-		t.Errorf("Expected %#v but got %#v", expectedInt, ints)
-	}
-	if !reflect.DeepEqual(expectedFloat, floats) {
-		t.Errorf("Expected %#v but got %#v", expectedFloat, floats)
-	}
-	if !reflect.DeepEqual(expectedStr, strs) {
-		t.Errorf("Expected %#v but got %#v", expectedStr, strs)
-	}
+	wantInt := []int{10, 20, 30}
+	wantFloat := []float32{1.2, 2.3, 3.4}
+	wantStr := []string{"alpha", "beta", "gamma"}
+	noDiff(t, "ints", ints, wantInt)
+	noDiff(t, "floats", floats, wantFloat)
+	noDiff(t, "strs", strs, wantStr)
 }
 
 func TestLoopIndexOutOfRange(t *testing.T) {
@@ -246,13 +233,10 @@ func TestLoopWithSlice(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Loop failed: %v", err)
 	}
-	expected := [][]int{{10, 20}, {30, 40}}
-	if !reflect.DeepEqual(rows, expected) {
-		t.Errorf("Expected %#v but got %#v", expected, rows)
-	}
+	want := [][]int{{10, 20}, {30, 40}}
+	noDiff(t, "rows", rows, want)
 }
 
 func TestLoopBreak(t *testing.T) {
@@ -264,13 +248,10 @@ func TestLoopBreak(t *testing.T) {
 		return Break
 	})
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Loop failed: %v", err)
 	}
-	expected := [][]int{{10, 20}}
-	if !reflect.DeepEqual(rows, expected) {
-		t.Errorf("Expected %#v but got %#v", expected, rows)
-	}
+	want := [][]int{{10, 20}}
+	noDiff(t, "rows", rows, want)
 }
 
 func TestLoopBreakWithError(t *testing.T) {
@@ -283,13 +264,10 @@ func TestLoopBreakWithError(t *testing.T) {
 		return e
 	})
 	if err != e {
-		t.Errorf("Unexpected error: %v", err)
-		return
+		t.Fatalf("Loop returned an unexpected error: %v", err)
 	}
-	expected := [][]int{{10, 20}}
-	if !reflect.DeepEqual(rows, expected) {
-		t.Errorf("Expected %#v but got %#v", expected, rows)
-	}
+	want := [][]int{{10, 20}}
+	noDiff(t, "rows", rows, want)
 }
 
 func TestLoopNoReturn(t *testing.T) {
@@ -299,13 +277,10 @@ func TestLoopNoReturn(t *testing.T) {
 		rows = append(rows, row)
 	})
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-		return
+		t.Fatalf("Loop failed: %v", err)
 	}
-	expected := [][]int{{10, 20}, {30, 40}}
-	if !reflect.DeepEqual(rows, expected) {
-		t.Errorf("Expected %#v but got %#v", expected, rows)
-	}
+	want := [][]int{{10, 20}, {30, 40}}
+	noDiff(t, "rows", rows, want)
 }
 
 func TestLoopReturnBool(t *testing.T) {
@@ -316,13 +291,10 @@ func TestLoopReturnBool(t *testing.T) {
 		return false
 	})
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-		return
+		t.Fatalf("Loop returned an unexpected error: %v", err)
 	}
-	expected := [][]int{{10, 20}}
-	if !reflect.DeepEqual(rows, expected) {
-		t.Errorf("Expected %#v but got %#v", expected, rows)
-	}
+	want := [][]int{{10, 20}}
+	noDiff(t, "rows", rows, want)
 }
 
 func TestRead(t *testing.T) {
@@ -339,17 +311,12 @@ func TestRead(t *testing.T) {
 		floats = append(floats, e.Float)
 	}
 	if err := r.Done(); err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Failed to read: %v", err)
 	}
-	expectedInt := []int{10, 20, 30}
-	expectedFloat := []float32{1.2, 2.3, 3.4}
-	if !reflect.DeepEqual(expectedInt, ints) {
-		t.Errorf("Unexpected %#v but got %#v", expectedInt, ints)
-	}
-	if !reflect.DeepEqual(expectedFloat, floats) {
-		t.Errorf("Unexpected %#v but got %#v", expectedFloat, floats)
-	}
+	wantInt := []int{10, 20, 30}
+	wantFloat := []float32{1.2, 2.3, 3.4}
+	noDiff(t, "ints", ints, wantInt)
+	noDiff(t, "floats", floats, wantFloat)
 }
 
 func TestReadWithName(t *testing.T) {
@@ -366,17 +333,12 @@ func TestReadWithName(t *testing.T) {
 		floats = append(floats, e.Float)
 	}
 	if err := r.Done(); err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Failed to read: %v", err)
 	}
-	expectedInt := []int{10, 20, 30}
-	expectedFloat := []float32{1.2, 2.3, 3.4}
-	if !reflect.DeepEqual(expectedInt, ints) {
-		t.Errorf("Unexpected %#v but got %#v", expectedInt, ints)
-	}
-	if !reflect.DeepEqual(expectedFloat, floats) {
-		t.Errorf("Unexpected %#v but got %#v", expectedFloat, floats)
-	}
+	wantInt := []int{10, 20, 30}
+	wantFloat := []float32{1.2, 2.3, 3.4}
+	noDiff(t, "ints", ints, wantInt)
+	noDiff(t, "floats", floats, wantFloat)
 }
 
 func TestReadIndexOutOfRange(t *testing.T) {
@@ -420,13 +382,10 @@ func TestReadWithSlice(t *testing.T) {
 		rows = append(rows, row)
 	}
 	if err := r.Done(); err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Failed to read: %v", err)
 	}
-	expected := [][]int{{10, 20}, {30, 40}}
-	if !reflect.DeepEqual(rows, expected) {
-		t.Errorf("Expected %#v but got %#v", expected, rows)
-	}
+	want := [][]int{{10, 20}, {30, 40}}
+	noDiff(t, "rows", rows, want)
 }
 
 func TestReadAllStruct(t *testing.T) {
@@ -438,13 +397,10 @@ func TestReadAllStruct(t *testing.T) {
 	}
 	var s []entry
 	if err := r.ReadAll(&s); err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("ReadAll failed: %v", err)
 	}
-	expected := []entry{{Int: 10, Float: 2.3}, {Int: 30, Float: 4.5}}
-	if !reflect.DeepEqual(expected, s) {
-		t.Errorf("Expected %v but got %v", expected, s)
-	}
+	want := []entry{{Int: 10, Float: 2.3}, {Int: 30, Float: 4.5}}
+	noDiff(t, "s", s, want)
 }
 
 func TestReadAllSlice(t *testing.T) {
@@ -452,13 +408,10 @@ func TestReadAllSlice(t *testing.T) {
 	r := NewReader(f)
 	var s [][]int
 	if err := r.ReadAll(&s); err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("ReadAll failed: %v", err)
 	}
-	expected := [][]int{{10, 20}, {30, 40}}
-	if !reflect.DeepEqual(expected, s) {
-		t.Errorf("Expected %v but got %v", expected, s)
-	}
+	want := [][]int{{10, 20}, {30, 40}}
+	noDiff(t, "s", s, want)
 }
 
 func TestEncTag(t *testing.T) {
@@ -478,21 +431,14 @@ func TestEncTag(t *testing.T) {
 		ints2 = append(ints2, e.Int2)
 	}
 	if err := r.Done(); err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Failed to read: %v", err)
 	}
-	expectedInt0 := []int{16, 32}
-	expectedInt1 := []int{8, 16}
-	expectedInt2 := []int{10, 20}
-	if !reflect.DeepEqual(expectedInt0, ints0) {
-		t.Errorf("Unexpected %#v but got %#v", expectedInt0, ints0)
-	}
-	if !reflect.DeepEqual(expectedInt1, ints1) {
-		t.Errorf("Unexpected %#v but got %#v", expectedInt1, ints1)
-	}
-	if !reflect.DeepEqual(expectedInt2, ints2) {
-		t.Errorf("Unexpected %#v but got %#v", expectedInt2, ints2)
-	}
+	wantInt0 := []int{16, 32}
+	wantInt1 := []int{8, 16}
+	wantInt2 := []int{10, 20}
+	noDiff(t, "ints0", ints0, wantInt0)
+	noDiff(t, "ints1", ints1, wantInt1)
+	noDiff(t, "ints2", ints2, wantInt2)
 }
 
 func TestNewDecoder(t *testing.T) {
@@ -501,10 +447,10 @@ func TestNewDecoder(t *testing.T) {
 		Age  int `name:"age"`
 	}{}))
 	if err != nil {
-		t.Error(err)
+		t.Fatalf("Failed to create a decoder: %v", err)
 	}
 	if !d.needHeader() {
-		t.Error("Unexpected")
+		t.Error("needHeader() returned false")
 	}
 }
 
@@ -551,15 +497,10 @@ func TestLineNumber(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Loop failed: %v", err)
 	}
-	expectedInt := []int{10, 20, 30}
-	expectedLineno := []int{1, 2, 3}
-	if !reflect.DeepEqual(expectedInt, ints) {
-		t.Errorf("Expected %#v but got %#v", expectedInt, ints)
-	}
-	if !reflect.DeepEqual(expectedLineno, lineno) {
-		t.Errorf("Expected %#v but got %#v", expectedLineno, lineno)
-	}
+	wantInt := []int{10, 20, 30}
+	wantLineno := []int{1, 2, 3}
+	noDiff(t, "ints", ints, wantInt)
+	noDiff(t, "lineno", lineno, wantLineno)
 }

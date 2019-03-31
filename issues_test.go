@@ -1,7 +1,6 @@
 package easycsv
 
 import (
-	"reflect"
 	"testing"
 	"time"
 )
@@ -26,15 +25,10 @@ func TestIssue1Fixed(t *testing.T) {
 		births = append(births, entry.Birth.Format("2006/01/02"))
 	}
 	if err := r.Done(); err != nil {
-		t.Error(err)
-		return
+		t.Fatalf("Failed to read: %v", err)
 	}
-	nameExpects := []string{"Alice", "Bob"}
-	birthExpects := []string{"1980/12/30", "1975/06/09"}
-	if !reflect.DeepEqual(names, nameExpects) {
-		t.Errorf("Expected %v but got %v", nameExpects, names)
-	}
-	if !reflect.DeepEqual(births, birthExpects) {
-		t.Errorf("Expected %v but got %v", birthExpects, births)
-	}
+	wantNames := []string{"Alice", "Bob"}
+	wantBirths := []string{"1980/12/30", "1975/06/09"}
+	noDiff(t, "names", names, wantNames)
+	noDiff(t, "births", births, wantBirths)
 }

@@ -184,6 +184,9 @@ Like [csv.Reader](https://golang.org/pkg/encoding/csv/#Reader) in the standard l
 ## Comment
 Comment, if not 0, is the comment character. Lines beginning with the character without preceding whitespace are ignored.
 
+## FieldsPerRecord
+In the standard library [csv.Reader](https://golang.org/pkg/encoding/csv/#Reader), an option `FieldsPerRecord` is available to define the number of fields allowed per CSV record. If you set a value that is not 0 to `FieldsPerRecord`, this option will be updated.
+
 # Customizing decoders
 By default, easycsv converts strings in CSV to integers, floats and bool automatically based on the types of struct fields and slices.
 

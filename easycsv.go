@@ -41,6 +41,9 @@ func newCSVReader(r io.Reader, opt Option) *csv.Reader {
 	if opt.LazyQuotes {
 		cr.LazyQuotes = opt.LazyQuotes
 	}
+	if opt.FieldsPerRecord != 0 {
+		cr.FieldsPerRecord = opt.FieldsPerRecord
+	}
 
 	return cr
 }

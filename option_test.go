@@ -50,12 +50,10 @@ func TestLazyQuotes(t *testing.T) {
 	noDiff(t, "ReadAll() with LazyQuotes", got, want)
 }
 
-func TestAllowMissingFields(t *testing.T) {
+func TestFieldsPerRecord(t *testing.T) {
 	csvContents := "1,2,3,4,5\n6,7,8"
 	f := bytes.NewBufferString(csvContents)
-	r := NewReader(f, Option{
-		AllowMissingFields: false,
-	})
+	r := NewReader(f)
 	var got [][]int
 	if err := r.ReadAll(&got); err == nil {
 		t.Fatal("Should have failed to read with error 'record on line 2: wrong number of fields'")
@@ -63,14 +61,14 @@ func TestAllowMissingFields(t *testing.T) {
 
 	f = bytes.NewBufferString(csvContents)
 	r = NewReader(f, Option{
-		AllowMissingFields: true,
+		FieldsPerRecord: -1,
 	})
 	got = [][]int{}
 	if err := r.ReadAll(&got); err != nil {
 		t.Fatalf("Failed to read: %v", err)
 	}
 	want := [][]int{{1, 2, 3, 4, 5}, {6, 7, 8}}
-	noDiff(t, "ReadAll() with AllowMissingFields", got, want)
+	noDiff(t, "ReadAll() with FieldsPerRecord", got, want)
 }
 
 func TestOptionWithNewReadCloser(t *testing.T) {

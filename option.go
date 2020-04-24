@@ -14,8 +14,10 @@ type Option struct {
 	Comment rune
 	// Allow lazy parsing of quotes, default to false
 	LazyQuotes bool
-	// If true, Reader does not check the number of fields per record
-	AllowMissingFields bool
+	// If negative, Reader does not check the number of fields per record
+	// If 0, this option does not update Reader
+	// If positive, Reader requires all records to have this number of fields
+	FieldsPerRecord int
 	// Decoders is the map to define custom encodings.
 	Decoders map[string]interface{}
 	// Custom decoders to parse specific types.
@@ -43,8 +45,8 @@ func (a *Option) mergeOption(b Option) {
 	if b.LazyQuotes {
 		a.LazyQuotes = b.LazyQuotes
 	}
-	if b.AllowMissingFields {
-		a.AllowMissingFields = true
+	if b.FieldsPerRecord != 0 {
+		a.FieldsPerRecord = b.FieldsPerRecord
 	}
 	if b.Decoders != nil {
 		if a.Decoders == nil {

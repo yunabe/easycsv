@@ -1,4 +1,4 @@
-module easycsv
+module github.com/yunabe/easycsv
 
 go 1.13
 

@@ -1,23 +1,28 @@
 # easycsv [![Build Status](https://travis-ci.org/yunabe/easycsv.svg?branch=master)](https://travis-ci.org/yunabe/easycsv) [![Go Report Card](https://goreportcard.com/badge/github.com/yunabe/easycsv)](https://goreportcard.com/report/github.com/yunabe/easycsv) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/yunabe/easycsv-binder/master?filepath=example.ipynb)
+
 easycsv package provides API to read CSV files in Go (golang) easily.
 
 # Installation
+
 ```
 go get -u github.com/yunabe/easycsv
 ```
 
 # Features
+
 - You can read CSV files with less boilerplate code because `easycsv` provides a consice error API.
 - `easycsv` automatically converts CSV rows into your custom structs.
 - Of course, you can handle TSV and other CSV-like formats by customizing `easycsv.Reader`.
 
 # Links
-- [yunabe/easycsv godoc](https://godoc.org/github.com/yunabe/easycsv)
+
+- [yunabe/easycsv pkg.go.dev](https://pkg.go.dev/github.com/yunabe/easycsv)
 - [yunabe/easycsv GitHub](https://github.com/yunabe/easycsv)
 
 # Quick Tour
 
 ## Read a CSV file to a struct
+
 ```golang
 r := easycsv.NewReaderFile("testdata/sample.csv")
 var entry struct {
@@ -33,6 +38,7 @@ if err := r.Done(); err != nil {
 ```
 
 ## Read a CSV file with Loop
+
 ```golang
 r := easycsv.NewReaderFile("testdata/sample.csv")
 err := r.Loop(func(entry *struct {
@@ -50,6 +56,7 @@ if err != nil {
 # Usages
 
 ## NewReader
+
 The core component of easycsv is [`Reader`](https://godoc.org/github.com/yunabe/easycsv#Reader).
 You can create a new `Reader` instance from `io.Reader`, `io.ReadCloser` and a file path.
 
@@ -64,6 +71,7 @@ The Reader created by NewReadCloser and NewReaderFile closes the file automatica
 So you do not need to close files manually and you can omit error handling code for closing files.
 
 ## Read
+
 There are three methods to read CSV with `easycsv.Reader`. Read, Loop and ReadAll.
 We are looking into [`Read`](https://godoc.org/github.com/yunabe/easycsv#Reader.Read) method first, which is the most basic and naive way to read CSV with Reader.
 
@@ -78,7 +86,7 @@ If `Reader` reaches to `EOF` or it fails to read a new row for some reasons, it 
 `Done` returns an error if `Read` encountered an error.
 `Done` returns `nil` if `Read` returned `false` because it reached to `EOF`.
 
-You can pass two types of pointers to Read. A pointer of a struct (e.g. `*myStruct`) or  a pointer of a slice of primitive typs (e.g. `*[]int`). Passing a pointer of a struct is more convenient.
+You can pass two types of pointers to Read. A pointer of a struct (e.g. `*myStruct`) or a pointer of a slice of primitive typs (e.g. `*[]int`). Passing a pointer of a struct is more convenient.
 When you use a struct, you need to specify how to map CSV columns to the struct's field using struct field's tags.
 Here are examples:
 
@@ -116,6 +124,7 @@ When you read CSV with `Read` methods, you have to always call `Done()` subseque
 Do not forget to call `Done` after `Read`.
 
 ## Loop
+
 ```golang
 func (r *Reader) Loop(body interface{}) (err error)
 ```
@@ -153,6 +162,7 @@ if err != nil {
 ```
 
 ## ReadAll
+
 ```golang
 func (r *Reader) ReadAll(s interface{}) (err error)
 ```
@@ -173,21 +183,26 @@ err := r.ReadAll(&entry);
 ```
 
 # Option
+
 To control the behavior of Reader, you can pass Option to NewReader methods.
 
 NewReader methods receive Option as a variadic parameter `opts`. `opts` is a variadic parameter so that we can omit `opts` from parameters when we call NewReader methods without changing Option.
 Thus, you don't need to pass multiple Option to NewReader methods although you can pass as many Option as you want.
 
 ## Comma
+
 Like [csv.Reader](https://golang.org/pkg/encoding/csv/#Reader) in the standard library, you can change the deliminator of CSV by specifying `Comma` option. For example, if you set `'\t'` to Comma, Reader reads a file as a TSV file.
 
 ## Comment
+
 Comment, if not 0, is the comment character. Lines beginning with the character without preceding whitespace are ignored.
 
 ## FieldsPerRecord
+
 In the standard library [csv.Reader](https://golang.org/pkg/encoding/csv/#Reader), an option `FieldsPerRecord` is available to define the number of fields allowed per CSV record. If you set a value that is not 0 to `FieldsPerRecord`, this option will be updated.
 
 # Customizing decoders
+
 By default, easycsv converts strings in CSV to integers, floats and bool automatically based on the types of struct fields and slices.
 
 - Integers are parsed with `strconv.ParseInt` and unsigned integers are parsed with `strconv.ParseUint`.
@@ -199,6 +214,7 @@ By default, easycsv converts strings in CSV to integers, floats and bool automat
 You can customize how to decode strings in CSV to values by specifying `enc` attribute to struct fields.
 
 ## Predefined encoding
+
 easycsv has three predefined custom encoding for integers.
 
 - `deci` - Parses inputs as decimal integers even if the inputs are prefixed with `"0"`.
@@ -206,9 +222,11 @@ easycsv has three predefined custom encoding for integers.
 - `oct`- Parses inputs as oct integers.
 
 ## Custom encoding
+
 Also, you can use custom encodings in easycsv.
 
 To use custom encodings:
+
 - Define a func that convert strings to your custom types. This func must receive a string and returns (custom-type, error).
 - Register the func to Option.Decoders.
 - Specify the registered func name with `enc` struct-field attribute.
@@ -236,6 +254,7 @@ if err := r.Done(); err != nil {
 ```
 
 ## Customizing decoders for types
+
 You can also define how to convert strings into specific types in easycsv by using Option.TypeDecoders option. Option.TypeDecoders is similar to Option.Decoders. The key is `reflect.Type` and the value is a function to convert strings to the specific type.
 Reader uses the functions registered to Option.TypeDecoders instead of default converters when it converts rows in CSV into those types.
 

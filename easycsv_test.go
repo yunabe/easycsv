@@ -373,6 +373,38 @@ func TestReadMissingColumn(t *testing.T) {
 	}
 }
 
+func TestReadExtraColumn(t *testing.T) {
+	f := bytes.NewReader([]byte("a,b,c\n10,1.2"))
+	r := NewReader(f)
+	var e struct {
+		Int    int     `name:"a"`
+		Float  float32 `name:"b"`
+		String string  `name:"c"`
+	}
+	for r.Read(&e) {
+		t.Errorf("r.Read returned true unexpectedly with %#v", e)
+	}
+	err := r.Done()
+	if err == nil || err.Error() != "record on line 2: wrong number of fields" {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	f = bytes.NewReader([]byte("a,b,c\n20,2.4"))
+	r = NewReader(f, Option{
+		FieldsPerRecord: -1,
+	})
+	for r.Read(&e) {
+		// read is successful in this case
+	}
+	err = r.Done()
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	noDiff(t, "ints", []int{e.Int}, []int{20})
+	noDiff(t, "floats", []float32{e.Float}, []float32{2.4})
+	noDiff(t, "ints", []string{e.String}, []string{""})
+}
+
 func TestReadWithSlice(t *testing.T) {
 	f := bytes.NewReader([]byte("10,20\n30,40"))
 	r := NewReader(f)

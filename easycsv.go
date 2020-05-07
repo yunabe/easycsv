@@ -549,6 +549,7 @@ func newStructDecoder(opt Option, t reflect.Type) (rowDecoder, error) {
 		converters: converters,
 		names:      nameMap,
 		indice:     idxMap,
+		opt:        opt,
 	}, nil
 }
 
@@ -557,6 +558,7 @@ type structRowDecoder struct {
 	converters []reflect.Value
 	names      map[string]int
 	indice     map[int]int
+	opt        Option
 }
 
 func (d *structRowDecoder) consumeHeader(header []string) error {
@@ -585,6 +587,9 @@ func (d *structRowDecoder) decode(row []string, out reflect.Value) error {
 	// TODO: Reset with zero first.
 	for i, j := range d.indice {
 		if i >= len(row) {
+			if d.opt.FieldsPerRecord < 0 {
+				continue
+			}
 			return fmt.Errorf("Accessed index %d though the size of the row is %d", i, len(row))
 		}
 		rets := d.converters[j].Call([]reflect.Value{reflect.ValueOf(row[i])})
